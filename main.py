@@ -9,6 +9,10 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import symbols_data
 from scipy.stats import linregress
+import math
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import Dense , LSTM
 
 plt.style.use('fivethirtyeight')
 st.set_option('deprecation.showPyplotGlobalUse', False)
