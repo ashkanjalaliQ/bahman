@@ -87,6 +87,48 @@ class LR_Prediction:
         return self.lr.predict(self.svm_prediction.x_forecast)
 
 
+class TrendLine:
+    def __init__(self, history):
+        self.history = history
+
+    def __get_data(self):
+        date = st.selectbox('Month/Months: ', [i for i in range(1, 13)])
+        days_of_month = 30
+
+        return date, days_of_month
+    def Draw(self):
+        date, days_of_month = self.__get_data()
+        self.history = self.history.tail(int(date) * days_of_month)
+        data0 = self.history.copy()
+        data0['date_id'] = ((data0.index.date - data0.index.date.min())).astype('timedelta64[D]')
+        data0['date_id'] = data0['date_id'].dt.days + 1
+        data1 = data0.copy()
+
+        while len(data1) > 3:
+            reg = linregress(x=data1['date_id'], y=data1['High'])
+            data1 = data1.loc[data1['High'] > reg[0] * data1['date_id'] + reg[1]]
+
+        reg = linregress(x=data1['date_id'], y=data1['High'])
+
+        data0['high_trend'] = reg[0] * data0['date_id'] + reg[1]
+
+        data1 = data0.copy()
+
+        while len(data1) > 3:
+            reg = linregress(x=data1['date_id'],y=data1['Low'],)
+            data1 = data1.loc[data1['Low'] < reg[0] * data1['date_id'] + reg[1]]
+
+        reg = linregress(x=data1['date_id'], y=data1['Low'],)
+
+        data0['low_trend'] = reg[0] * data0['date_id'] + reg[1]
+
+        plt.figure(figsize=(16, 8))
+        data0['Close'].plot()
+        data0['high_trend'].plot()
+        data0['low_trend'].plot()
+        plt.show()
+        st.pyplot()
+
 st.write('''
 # Stock market software(SMS)
 ''')
@@ -127,3 +169,8 @@ st.success(lr_prediction.get_accuracy())
 st.header('LR Prediction')
 st.success(lr_prediction.get_prediction())
 st.write(lr_prediction.get_prediction())
+
+## TrendLine
+st.header('TrendLine: ')
+trendline = TrendLine(finance.get_history(date_range, period))
+trendline.Draw()
