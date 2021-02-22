@@ -129,6 +129,65 @@ class TrendLine:
         plt.show()
         st.pyplot()
 
+
+class SMA:
+    def __init__(self, history, symbol):
+        self.history = history
+        self.symbol = symbol
+
+    def get_signals(self, data, moving_average):
+        signalBuy = []
+        signalSell = []
+        f = -1
+        for i in range(len(data)):
+            if moving_average['30']['MA'][i] > moving_average['100']['MA'][i]:
+                if f != 1:
+                    signalBuy.append(data[self.symbol][i])
+                    signalSell.append(np.nan)
+                    f = 1
+                else:
+                    signalBuy.append(np.nan)
+                    signalSell.append(np.nan)
+            elif moving_average['30']['MA'][i] < moving_average['100']['MA'][i]:
+                if f != 0:
+                    signalBuy.append(np.nan)
+                    signalSell.append(data[self.symbol][i])
+                    f = 0
+                else:
+                    signalBuy.append(np.nan)
+                    signalSell.append(np.nan)
+            else:
+                signalBuy.append(np.nan)
+                signalSell.append(np.nan)
+
+        return signalBuy, signalSell
+
+    def Draw(self):
+        moving_avarage = {
+            '30': pd.DataFrame(),
+            '100': pd.DataFrame()
+        }
+        for day in moving_avarage.keys():
+            moving_avarage[day]['MA'] = self.history['Close'].rolling(window=int(day)).mean()
+
+        data = pd.DataFrame()
+        data[self.symbol] = self.history['Close']
+
+        data['buy signal'], data['sell signal'] = self.get_signals(data, moving_avarage)
+
+        plt.figure(figsize=(16, 8))
+        plt.plot(data[self.symbol], label=self.symbol, alpha=0.3)
+        plt.plot(moving_avarage['30']['MA'], label='MA30', alpha=0.3)
+        plt.plot(moving_avarage['100']['MA'], label="MA100", alpha=0.3)
+        plt.scatter(data.index, data['buy signal'], label='BUY', marker='^', color='g')
+        plt.scatter(data.index, data['sell signal'], label='SELL', marker='v', color='r')
+        plt.title('Two Moving Average Indicator')
+        plt.xlabel('Date')
+        plt.ylabel('Price (USD)')
+        plt.legend()
+        plt.show()
+        st.pyplot()
+
 st.write('''
 # Stock market software(SMS)
 ''')
@@ -174,3 +233,8 @@ st.write(lr_prediction.get_prediction())
 st.header('TrendLine: ')
 trendline = TrendLine(finance.get_history(date_range, period))
 trendline.Draw()
+
+## SMA
+st.header('SMA: ')
+sma = SMA(history, symbol)
+sma.Draw()
