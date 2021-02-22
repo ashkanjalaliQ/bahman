@@ -135,55 +135,117 @@ class SMA:
         self.history = history
         self.symbol = symbol
 
-    def get_signals(self, data, moving_average):
-        signalBuy = []
-        signalSell = []
+    def __get_signals(self, data, moving_average):
+        signals = {
+            'Buy': [],
+            'Sell': []
+        }
         f = -1
         for i in range(len(data)):
             if moving_average['30']['MA'][i] > moving_average['100']['MA'][i]:
                 if f != 1:
-                    signalBuy.append(data[self.symbol][i])
-                    signalSell.append(np.nan)
+                    signals['Buy'].append(data[self.symbol][i])
+                    signals['Sell'].append(np.nan)
                     f = 1
                 else:
-                    signalBuy.append(np.nan)
-                    signalSell.append(np.nan)
+                    signals['Buy'].append(np.nan)
+                    signals['Sell'].append(np.nan)
             elif moving_average['30']['MA'][i] < moving_average['100']['MA'][i]:
                 if f != 0:
-                    signalBuy.append(np.nan)
-                    signalSell.append(data[self.symbol][i])
+                    signals['Buy'].append(np.nan)
+                    signals['Sell'].append(data[self.symbol][i])
                     f = 0
                 else:
-                    signalBuy.append(np.nan)
-                    signalSell.append(np.nan)
+                    signals['Buy'].append(np.nan)
+                    signals['Sell'].append(np.nan)
             else:
-                signalBuy.append(np.nan)
-                signalSell.append(np.nan)
+                signals['Buy'].append(np.nan)
+                signals['Sell'].append(np.nan)
 
-        return signalBuy, signalSell
+        return signals['Buy'], signals['Sell']
 
     def Draw(self):
-        moving_avarage = {
+        self.moving_avarage = {
             '30': pd.DataFrame(),
             '100': pd.DataFrame()
         }
-        for day in moving_avarage.keys():
-            moving_avarage[day]['MA'] = self.history['Close'].rolling(window=int(day)).mean()
+        for day in self.moving_avarage.keys():
+            self.moving_avarage[day]['MA'] = self.history['Close'].rolling(window=int(day)).mean()
 
-        data = pd.DataFrame()
-        data[self.symbol] = self.history['Close']
+        self.data = pd.DataFrame()
+        self.data[self.symbol] = self.history['Close']
+        self.data['buy signal'], self.data['sell signal'] = self.__get_signals(self.data, self.moving_avarage)
 
-        data['buy signal'], data['sell signal'] = self.get_signals(data, moving_avarage)
+        self.__plot()
 
+    def __plot(self):
         plt.figure(figsize=(16, 8))
-        plt.plot(data[self.symbol], label=self.symbol, alpha=0.3)
-        plt.plot(moving_avarage['30']['MA'], label='MA30', alpha=0.3)
-        plt.plot(moving_avarage['100']['MA'], label="MA100", alpha=0.3)
-        plt.scatter(data.index, data['buy signal'], label='BUY', marker='^', color='g')
-        plt.scatter(data.index, data['sell signal'], label='SELL', marker='v', color='r')
+        plt.plot(self.data[self.symbol], label=self.symbol, alpha=0.3)
+        plt.plot(self.moving_avarage['30']['MA'], label='MA30', alpha=0.3)
+        plt.plot(self.moving_avarage['100']['MA'], label="MA100", alpha=0.3)
+        plt.scatter(self.data.index, self.data['buy signal'], label='BUY', marker='^', color='g')
+        plt.scatter(self.data.index, self.data['sell signal'], label='SELL', marker='v', color='r')
         plt.title('Two Moving Average Indicator')
         plt.xlabel('Date')
         plt.ylabel('Price (USD)')
+        plt.legend()
+        plt.show()
+        st.pyplot()
+
+
+class MACD:
+    def __init__(self, history):
+        self.history = history
+
+    def __get_signals(self, history):
+        signals = {
+            'Buy': [],
+            'Sell': []
+        }
+        f = -1
+        for i in range(0, len(history)):
+            if history['MACD'][i] > history['signal line'][i]:
+                signals['Sell'].append(np.nan)
+                if f != 1:
+                    signals['Buy'].append(history['Close'][i])
+                    f = 1
+                else:
+                    signals['Buy'].append(np.nan)
+            elif history['MACD'][i] < history['signal line'][i]:
+                signals['Buy'].append(np.nan)
+                if f != 0:
+                    signals['Sell'].append(history['Close'][i])
+                    f = 0
+                else:
+                    signals['Sell'].append(np.nan)
+
+            else:
+                signals['Buy'].append(np.nan)
+                signals['Sell'].append(np.nan)
+
+        return signals['Buy'], signals['Sell']
+
+    def Draw(self):
+        self.history = self.history.tail(220)
+        shortEMA = self.history.Close.ewm(span=12, adjust=False).mean()
+        longEMA = self.history.Close.ewm(span=26, adjust=False).mean()
+        MACD = shortEMA - longEMA
+        signal = MACD.ewm(span=9, adjust=False).mean()
+
+        self.history['MACD'], self.history['signal line'] = MACD, signal
+        self.history['buy signal'], self.history['sell signal'] = self.__get_signals(self.history)
+
+        self.__plot()
+
+    def __plot(self):
+        plt.figure(figsize=(16, 8))
+        plt.scatter(self.history.index, self.history['buy signal'], color='green', label='BUY', marker='^')
+        plt.scatter(self.history.index, self.history['sell signal'], color='red', label='SELL', marker='v')
+        plt.plot(self.history['Close'], label='Price', alpha=0.5)
+        plt.title('MACD INDICATOR')
+        plt.xlabel('DATE')
+        plt.ylabel('Indicator')
+        plt.xticks(rotation=45)
         plt.legend()
         plt.show()
         st.pyplot()
@@ -238,3 +300,8 @@ trendline.Draw()
 st.header('SMA: ')
 sma = SMA(history, symbol)
 sma.Draw()
+
+## MACD
+st.header('MACD: ')
+macd = MACD(history)
+macd.Draw()
