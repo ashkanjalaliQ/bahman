@@ -1,4 +1,6 @@
-import numpy as np 
+import os
+
+import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
@@ -7,6 +9,8 @@ import streamlit as st
 from PIL import Image
 import yfinance as yf
 import matplotlib.pyplot as plt
+import Translations.language_names as lang_names
+import Translations.translations as translates
 import symbols_data
 from scipy.stats import linregress
 import math
@@ -96,7 +100,7 @@ class TrendLine:
         self.history = history
 
     def __get_data(self):
-        date = st.selectbox('Month/Months: ', [i for i in range(1, 13)])
+        date = st.selectbox(f'{translates.translate[lang_name]["Month"]}/{translates.translate[lang_name]["Months"]}: ', [i for i in range(1, 13)])
         days_of_month = 30
 
         return date, days_of_month
@@ -254,25 +258,38 @@ class MACD:
         plt.show()
         st.pyplot()
 
-st.write('''
-# Stock market software(SMS)
+
+class DeepLearn:
+    def __init__(self):
+        pass
+
+    def filter_data(self):
+        pass
+
+
+lang_name = st.radio('Languages', list(lang_names.languages.values()))
+
+st.write(f'''
+# {translates.translate[lang_name]['main_title']}
 ''')
-st.header('Insert Data')
-symbol = st.selectbox('Symbol: ', symbols_data.SYMBOLS)
-prediction_days = int(st.text_input('Prediction days: ', 5))
-st.write("## Date Range")
+st.header(f'{translates.translate[lang_name]["Insert_Data"]}')
+symbol = st.selectbox(f'{translates.translate[lang_name]["Symbol"]}: ', symbols_data.SYMBOLS)
+prediction_days = int(st.text_input(f'{translates.translate[lang_name]["Prediction_days"]}: ', 5))
+st.write(f"## {translates.translate[lang_name]['Date_Range']}")
 year = st.slider(
-    'Select a range of Date',
-    2000, 2021, (2015, 2021)
+    f'{translates.translate[lang_name]["Select_a_range_of_Date"]}',
+    2000, 2021
 )
-period = st.selectbox('Period: ', ['1d', '1w', '1m'])
+
+st.write(f'{translates.translate[lang_name]["From"]}', year, f'{translates.translate[lang_name]["until_now"]}')
+period = st.selectbox(f'{translates.translate[lang_name]["Period"]}: ', ['1d', '1w', '1m'])
 month = day = 1
-date_range = f"{year[0]}-0{month}-0{day}"
+date_range = f"{year}-0{month}-0{day}"
 
 finance = Finance(symbol)
 history = finance.get_history(date_range, period)
 
-st.header('Current price: ')
+st.header(f'{translates.translate[lang_name]["Current_price"]}: ')
 st.info(history.tail(1).Close)
 
 prediction = Prediction(prediction_days, history)
@@ -280,32 +297,32 @@ close_price, predict_price, history = prediction.get_close_price()
 
 ## SVM
 svm_prediction = SVM_Prediction(close_price, predict_price, history, prediction_days)
-st.header('SVM Accuracy')
+st.header(f'{translates.translate[lang_name]["SVM_Accuracy"]}')
 st.success(svm_prediction.get_accuracy())
 
-st.header('SVM Prediction')
+st.header(f'{translates.translate[lang_name]["SVM_Prediction"]}')
 st.success(str(svm_prediction.get_prediction()))
 
 ## LR
 lr_prediction = LR_Prediction(svm_prediction)
-st.header('LR Accuracy')
+st.header(f'{translates.translate[lang_name]["LR_Accuracy"]}')
 st.success(lr_prediction.get_accuracy())
 
-st.header('LR Prediction')
+st.header(f'{translates.translate[lang_name]["LR_Prediction"]}')
 st.success(lr_prediction.get_prediction())
 st.write(lr_prediction.get_prediction())
 
 ## TrendLine
-st.header('TrendLine: ')
+st.header(f'{translates.translate[lang_name]["TrendLines"]}: ')
 trendline = TrendLine(finance.get_history(date_range, period))
 trendline.Draw()
 
 ## SMA
-st.header('SMA: ')
+st.header(f'{translates.translate[lang_name]["SMA"]}: ')
 sma = SMA(history, symbol)
 sma.Draw()
 
 ## MACD
-st.header('MACD: ')
+st.header(f'{translates.translate[lang_name]["MACD"]}: ')
 macd = MACD(history)
 macd.Draw()
