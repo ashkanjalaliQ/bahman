@@ -1,0 +1,10 @@
+numpy
+pandas
+sklearn
+streamlit
+PIL
+yfinance
+matplotlib
+scipy
+math
+keras
