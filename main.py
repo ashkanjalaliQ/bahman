@@ -174,25 +174,30 @@ class SMA:
 
         return signals['Buy'], signals['Sell']
 
-    def Draw(self):
-        self.moving_avarage = {
+    def calculate_moving_average(self, history):
+        moving_average = {
             '30': pd.DataFrame(),
             '100': pd.DataFrame()
         }
-        for day in self.moving_avarage.keys():
-            self.moving_avarage[day]['MA'] = self.history['Close'].rolling(window=int(day)).mean()
+        for day in moving_average.keys():
+            moving_average[day]['MA'] = history['Close'].rolling(window=int(day)).mean()
+
+        return moving_average
+
+    def Draw(self):
+        self.moving_average = self.calculate_moving_average(self.history)
 
         self.data = pd.DataFrame()
         self.data[self.symbol] = self.history['Close']
-        self.data['buy signal'], self.data['sell signal'] = self.__get_signals(self.data, self.moving_avarage)
+        self.data['buy signal'], self.data['sell signal'] = self.__get_signals(self.data, self.moving_average)
 
         self.__plot()
 
     def __plot(self):
         plt.figure(figsize=(16, 8))
         plt.plot(self.data[self.symbol], label=self.symbol, alpha=0.3)
-        plt.plot(self.moving_avarage['30']['MA'], label='MA30', alpha=0.3)
-        plt.plot(self.moving_avarage['100']['MA'], label="MA100", alpha=0.3)
+        plt.plot(self.moving_average['30']['MA'], label='MA30', alpha=0.3)
+        plt.plot(self.moving_average['100']['MA'], label="MA100", alpha=0.3)
         plt.scatter(self.data.index, self.data['buy signal'], label='BUY', marker='^', color='g')
         plt.scatter(self.data.index, self.data['sell signal'], label='SELL', marker='v', color='r')
         plt.title('Two Moving Average Indicator')
@@ -213,15 +218,15 @@ class MACD:
             'Sell': []
         }
         f = -1
-        for i in range(0, len(history)):
-            if history['MACD'][i] > history['signal line'][i]:
+        for i in range(len(history)):
+            if history['MACD Line'][i] > history['Signal Line'][i]:
                 signals['Sell'].append(np.nan)
                 if f != 1:
                     signals['Buy'].append(history['Close'][i])
                     f = 1
                 else:
                     signals['Buy'].append(np.nan)
-            elif history['MACD'][i] < history['signal line'][i]:
+            elif history['MACD Line'][i] < history['Signal Line'][i]:
                 signals['Buy'].append(np.nan)
                 if f != 0:
                     signals['Sell'].append(history['Close'][i])
@@ -235,28 +240,33 @@ class MACD:
 
         return signals['Buy'], signals['Sell']
 
-    def Draw(self):
-        self.history = self.history.tail(220)
-        shortEMA = self.history.Close.ewm(span=12, adjust=False).mean()
-        longEMA = self.history.Close.ewm(span=26, adjust=False).mean()
+    def calculate_macd(self, history, days=365):
+        history = history.tail(days)
+        shortEMA = history.Close.ewm(span=12, adjust=False).mean()
+        longEMA = history.Close.ewm(span=26, adjust=False).mean()
         MACD = shortEMA - longEMA
-        signal = MACD.ewm(span=9, adjust=False).mean()
+        Signal = MACD.ewm(span=9, adjust=False).mean()
+
+        return MACD, Signal, history
+
+    def Draw(self):
+        MACD, Signal, self.history = self.calculate_macd(self.history)
 
         plt.plot(MACD, label='MACD')
-        plt.plot(signal, label='Signal')
+        plt.plot(Signal, label='Signal')
         plt.legend()
         plt.show()
         st.pyplot()
 
-        self.history['MACD'], self.history['signal line'] = MACD, signal
-        self.history['buy signal'], self.history['sell signal'] = self.__get_signals(self.history)
+        self.history['MACD Line'], self.history['Signal Line'] = MACD, Signal
+        self.history['Buy Signal'], self.history['Sell Signal'] = self.__get_signals(self.history)
 
         self.__plot()
 
     def __plot(self):
         plt.figure(figsize=(16, 8))
-        plt.scatter(self.history.index, self.history['buy signal'], color='green', label='BUY', marker='^')
-        plt.scatter(self.history.index, self.history['sell signal'], color='red', label='SELL', marker='v')
+        plt.scatter(self.history.index, self.history['Buy Signal'], color='green', label='BUY', marker='^')
+        plt.scatter(self.history.index, self.history['Sell Signal'], color='red', label='SELL', marker='v')
         plt.plot(self.history['Close'], label='Price', alpha=0.5)
         plt.title('MACD INDICATOR')
         plt.xlabel('DATE')
@@ -265,6 +275,36 @@ class MACD:
         plt.legend()
         plt.show()
         st.pyplot()
+
+
+class RSI:
+    def __init__(self, history):
+        self.history = history
+
+    def calculate_rsi(self, history, days=100, period=14):
+        history = history.tail(days)
+        history = history['Close'].diff(1)
+        history.dropna()
+        up = history.copy()
+        down = history.copy()
+        up[up < 0] = 0
+        down[down > 0] = 0
+        avg_gain = up.rolling(window=period).mean()
+        avg_loss = abs(down.rolling(window=period).mean())
+        RSI = 100.0 - (100.0 / (1.0 + avg_gain / avg_loss))
+        return RSI
+
+    def Draw(self):
+        self.history['RSI'] = self.calculate_rsi(self.history)
+        self.__plot()
+
+    def __plot(self):
+        plt.plot(self.history['RSI'], label='RSI')
+        plt.axhline(30, linestyle='--', color='red', alpha=0.5)
+        plt.axhline(70, linestyle='--', color='red', alpha=0.5)
+        plt.show()
+        st.pyplot()
+
 
 
 class DeepLearn:
@@ -339,3 +379,8 @@ sma.Draw()
 st.header(f'{translates.translate[lang_name]["MACD"]}: ')
 macd = MACD(history)
 macd.Draw()
+
+## RSI
+st.header('RSI')
+rsi = RSI(history)
+rsi.Draw()
