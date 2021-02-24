@@ -5,6 +5,7 @@
 streamlit run "<main file address>"
 ```
 ## Targets
+- [ ] Create "Babam" Programming Language
 - [x] add RSI
 - [x] add MACD
 - [x] add Moving Average
