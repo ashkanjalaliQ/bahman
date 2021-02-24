@@ -10,7 +10,6 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import Translations.language_names as lang_names
 import Translations.translations as translates
-#import symbols_data
 import data.symbols_data as symbols_data
 from scipy.stats import linregress
 import math
@@ -130,10 +129,13 @@ class TrendLine:
 
         data0['low_trend'] = reg[0] * data0['date_id'] + reg[1]
 
+        self.__plot(data0)
+
+    def __plot(self, data):
         plt.figure(figsize=(16, 8))
-        data0['Close'].plot()
-        data0['high_trend'].plot()
-        data0['low_trend'].plot()
+        data['Close'].plot()
+        data['high_trend'].plot()
+        data['low_trend'].plot()
         plt.show()
         st.pyplot()
 
@@ -240,8 +242,8 @@ class MACD:
         MACD = shortEMA - longEMA
         signal = MACD.ewm(span=9, adjust=False).mean()
 
-        plt.plot(MACD)
-        plt.plot(signal)
+        plt.plot(MACD, label='MACD')
+        plt.plot(signal, label='Signal')
         plt.legend()
         plt.show()
         st.pyplot()
@@ -300,6 +302,11 @@ st.info(history.tail(1).Close)
 
 prediction = Prediction(prediction_days, history)
 close_price, predict_price, history = prediction.get_close_price()
+
+plt.figure(figsize=(16, 8))
+plt.plot(close_price)
+plt.show()
+st.pyplot()
 
 ## SVM
 svm_prediction = SVM_Prediction(close_price, predict_price, history, prediction_days)

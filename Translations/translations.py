@@ -13,7 +13,7 @@ translate = {
         'SVM_Accuracy': 'SVM Accuracy',
         'SVM_Prediction': 'SVM Prediction',
         'LR_Accuracy': 'LR Accuracy',
-        'LR_Prediction': '',
+        'LR_Prediction': 'LR Prediction',
         'TrendLines': 'TrendLines',
         'SMA': 'SMA',
         'MACD': 'MACD',
