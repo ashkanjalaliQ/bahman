@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -11,12 +10,13 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import Translations.language_names as lang_names
 import Translations.translations as translates
-import symbols_data
+#import symbols_data
+import data.symbols_data as symbols_data
 from scipy.stats import linregress
 import math
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import Dense , LSTM
+from keras.layers import Dense, LSTM
 
 plt.style.use('fivethirtyeight')
 st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -239,6 +239,12 @@ class MACD:
         longEMA = self.history.Close.ewm(span=26, adjust=False).mean()
         MACD = shortEMA - longEMA
         signal = MACD.ewm(span=9, adjust=False).mean()
+
+        plt.plot(MACD)
+        plt.plot(signal)
+        plt.legend()
+        plt.show()
+        st.pyplot()
 
         self.history['MACD'], self.history['signal line'] = MACD, signal
         self.history['buy signal'], self.history['sell signal'] = self.__get_signals(self.history)
