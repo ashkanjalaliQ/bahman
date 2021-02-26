@@ -429,8 +429,6 @@ class DeepLearn:
         self.valid = self.close_data[self.get_train_data_len():]
         self.valid['Prediction'] = self.predict
 
-
-        st.header('Deep Learning Method : ')
         plt.figure(figsize=(16, 8))
         plt.title('Price Predictor Using DL')
         plt.xlabel('Date')
@@ -451,9 +449,6 @@ class DeepLearn:
         self.xtest = self.list_to_np(self.xtest, 2, reshape=True)
 
         self.predict = self.predict_model(self.xtest, inverse_transform=True)
-
-        st.header('Deep Learning Prediction : ')
-        st.success(self.predict)
 
         return self.predict
 
@@ -530,10 +525,13 @@ macd = MACD(history)
 macd.Draw()
 
 ## RSI
-st.header('RSI')
+st.header(f'{translates.translate[lang_name]["RSI"]}:')
 rsi = RSI(history)
 rsi.Draw()
 
 ## DeepLearning
+st.header(f'{translates.translate[lang_name]["Deep_Learning"]}:')
 dl = DeepLearn(history)
-dl.prediction()
+predict = dl.prediction()
+st.header(f'{translates.translate[lang_name]["Deep_Learning_Prediction"]}: ')
+st.success(predict)

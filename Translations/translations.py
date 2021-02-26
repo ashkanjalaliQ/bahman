@@ -19,7 +19,10 @@ translate = {
         'MACD': 'MACD',
         'Month': 'Month',
         'Months': 'Months',
-        'Languages': 'Languages'
+        'Languages': 'Languages',
+        'RSI': 'RSI',
+        'Deep_Learning': 'Deep Learning',
+        'Deep_Learning_Prediction': 'Deep Learning Prediction'
     },
     'Persian': {
         'main_title': 'نرم افزار بازار بورس(ناب)',
@@ -41,6 +44,9 @@ translate = {
         'MACD': 'مکدی',
         'Month': 'ماه',
         'Months': 'ماه ها',
-        'Languages': 'زبان ها'
+        'Languages': 'زبان ها',
+        'RSI': 'آراس‌آی',
+        'Deep_Learning': 'یادگیری عمیق',
+        'Deep_Learning_Prediction': 'پیشبینی یادگیری عمیق'
     }
 }
