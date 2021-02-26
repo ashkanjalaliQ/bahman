@@ -5,7 +5,7 @@
 streamlit run "<main file address>"
 ```
 ## Targets
-- [ ] Create "Babam" Programming Language
+- [ ] Create Programming Language
 - [x] add DeepLearning
 - [x] add RSI
 - [x] add MACD
