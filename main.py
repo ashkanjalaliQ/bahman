@@ -7,10 +7,12 @@ from sklearn.model_selection import train_test_split
 import streamlit as st
 from PIL import Image
 import yfinance as yf
+from pytse.download import Stock_Data
+from pytse.symbols_data import SYMBOLS as IRStock
 import matplotlib.pyplot as plt
 import Translations.language_names as lang_names
 import Translations.translations as translates
-import data.symbols_data as symbols_data
+import data.symbols_data as USStock
 from scipy.stats import linregress
 import math
 from sklearn.preprocessing import MinMaxScaler
@@ -26,13 +28,15 @@ class Finance:
 
     def get_history(self, date_range, period):
         try:
+            ## IRAN STOCK
+            stock_data = Stock_Data(symbol_name=self.symbol)
+            history = stock_data.get_data()
+
+        except:
             history = yf.Ticker(self.symbol)
             history = history.history(period=period, start=date_range)
             history['Date'] = history.index
             history = history.set_index(pd.DatetimeIndex(history['Date'].values))
-        except:
-            ## IRAN STOCK
-            pass
         return history
 
     def get_symbol_name(self):
@@ -377,7 +381,7 @@ class DeepLearn:
     def compile_model(self):
         self.model.compile(loss='mean_squared_error', optimizer='adam')
 
-    def fit_model(self, epochs=3, batch_size=1):
+    def fit_model(self, epochs=5, batch_size=1):
         self.model.fit(self.xtrain, self.ytrain, epochs=epochs, batch_size=batch_size)
 
     def predict_model(self, xtest, inverse_transform=True):
@@ -465,7 +469,8 @@ st.write(f'''
 # {translates.translate[lang_name]['main_title']}
 ''')
 st.header(f'{translates.translate[lang_name]["Insert_Data"]}')
-symbol = st.selectbox(f'{translates.translate[lang_name]["Symbol"]}: ', symbols_data.SYMBOLS)
+print([USStock] + [list(IRStock.keys())])
+symbol = st.selectbox(f'{translates.translate[lang_name]["Symbol"]}: ', [USStock.SYMBOLS][0] + [list(IRStock.keys())][0])
 prediction_days = int(st.text_input(f'{translates.translate[lang_name]["Prediction_days"]}: ', 5))
 st.write(f"## {translates.translate[lang_name]['Date_Range']}")
 year = st.slider(
@@ -534,4 +539,9 @@ st.header(f'{translates.translate[lang_name]["Deep_Learning"]}:')
 dl = DeepLearn(history)
 predict = dl.prediction()
 st.header(f'{translates.translate[lang_name]["Deep_Learning_Prediction"]}: ')
-st.success(predict)
+#st.success(predict)
+if float(history['Close'].tolist()[-1]) < float(predict):
+    st.success(predict)
+else:
+    st.warning(predict)
+#st.info(history['Close'].tolist()[-1])
