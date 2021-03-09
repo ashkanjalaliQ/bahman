@@ -37,6 +37,7 @@ class Finance:
             history = history.history(period=period, start=date_range)
             history['Date'] = history.index
             history = history.set_index(pd.DatetimeIndex(history['Date'].values))
+
         return history
 
     def get_symbol_name(self):
@@ -542,6 +543,8 @@ st.header(f'{translates.translate[lang_name]["Deep_Learning_Prediction"]}: ')
 #st.success(predict)
 if float(history['Close'].tolist()[-1]) < float(predict):
     st.success(predict)
+    st.success(f'Yesterday: {history["Close"].tolist()[-1]}')
 else:
-    st.warning(predict)
+    st.error(predict)
+    st.success(f'Yesterday: {history["Close"].tolist()[-1]}')
 #st.info(history['Close'].tolist()[-1])
