@@ -6,6 +6,7 @@ streamlit run "<main file address>"
 ```
 ## Targets
 - [ ] Create Programming Language
+- [x] add IRANStock
 - [x] add DeepLearning
 - [x] add RSI
 - [x] add MACD
