@@ -1,4 +1,4 @@
-# Stock market software(**SMS**)
+# Sahm
 
 ## Usage
 ```
