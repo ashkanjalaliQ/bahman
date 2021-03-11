@@ -39,7 +39,6 @@ class Finance:
             history = history.set_index(pd.DatetimeIndex(history['Date'].values))
 
         return history
-
     def get_symbol_name(self):
         return self.symbol
 
@@ -102,46 +101,46 @@ class LR_Prediction:
 class TrendLine:
     def __init__(self, history):
         self.history = history
+        self.days_of_month = 30
 
     def __get_data(self):
         date = st.selectbox(f'{translates.translate[lang_name]["Month"]}/{translates.translate[lang_name]["Months"]}: ', [i for i in range(1, 13)])
-        days_of_month = 30
-
-        return date, days_of_month
+        return date
     def Draw(self):
-        date, days_of_month = self.__get_data()
-        self.history = self.history.tail(int(date) * days_of_month)
-        data0 = self.history.copy()
-        data0['date_id'] = ((data0.index.date - data0.index.date.min())).astype('timedelta64[D]')
-        data0['date_id'] = data0['date_id'].dt.days + 1
-        data1 = data0.copy()
+        date = self.__get_data()
+        self.history = self.history.tail(int(date) * self.days_of_month)
+        self.history = self.history.copy()
+        self.history['date_id'] = ((self.history.index.date - self.history.index.date.min())).astype('timedelta64[D]')
+        self.history['date_id'] = self.history['date_id'].dt.days + 1
+        history_copy = self.history.copy()
 
-        while len(data1) > 3:
-            reg = linregress(x=data1['date_id'], y=data1['High'])
-            data1 = data1.loc[data1['High'] > reg[0] * data1['date_id'] + reg[1]]
+        while len(history_copy) > 3:
+            reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
+            history_copy = history_copy.loc[history_copy['Close'] > reg[0] * history_copy['date_id'] + reg[1]]
 
-        reg = linregress(x=data1['date_id'], y=data1['High'])
+        reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
 
-        data0['high_trend'] = reg[0] * data0['date_id'] + reg[1]
+        self.history['high_trend'] = reg[0] * self.history['date_id'] + reg[1]
 
-        data1 = data0.copy()
+        history_copy = self.history.copy()
 
-        while len(data1) > 3:
-            reg = linregress(x=data1['date_id'],y=data1['Low'],)
-            data1 = data1.loc[data1['Low'] < reg[0] * data1['date_id'] + reg[1]]
+        while len(history_copy) > 3:
+            reg = linregress(x=history_copy['date_id'],y=history_copy['Close'],)
+            history_copy = history_copy.loc[history_copy['Close'] < reg[0] * history_copy['date_id'] + reg[1]]
 
-        reg = linregress(x=data1['date_id'], y=data1['Low'],)
+        reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
 
-        data0['low_trend'] = reg[0] * data0['date_id'] + reg[1]
+        self.history['low_trend'] = reg[0] * self.history['date_id'] + reg[1]
 
-        self.__plot(data0)
+        self.__plot(self.history)
 
     def __plot(self, data):
         plt.figure(figsize=(16, 8))
         data['Close'].plot()
         data['high_trend'].plot()
+        st.write(data['high_trend'])
         data['low_trend'].plot()
-        plt.show()
+        st.write(data['low_trend'])
         st.pyplot()
 
 
@@ -209,7 +208,6 @@ class SMA:
         plt.xlabel('Date')
         plt.ylabel('Price (USD)')
         plt.legend()
-        plt.show()
         st.pyplot()
 
 
@@ -245,6 +243,12 @@ class MACD:
 
         return signals['Buy'], signals['Sell']
 
+    def histogram(self):
+        difference_line = []
+        for i in range(len(self.history)):
+            difference_line.append(self.history['MACD Line'][i] - self.history['Signal Line'][i])
+        return difference_line
+
     def calculate_macd(self, history, days=365):
         history = history.tail(days)
         shortEMA = history.Close.ewm(span=12, adjust=False).mean()
@@ -257,16 +261,21 @@ class MACD:
     def Draw(self):
         MACD, Signal, self.history = self.calculate_macd(self.history)
 
-        plt.plot(MACD, label='MACD')
-        plt.plot(Signal, label='Signal')
-        plt.legend()
-        plt.show()
-        st.pyplot()
+
 
         self.history['MACD Line'], self.history['Signal Line'] = MACD, Signal
+        self.history['Histogram'] = self.histogram()
         self.history['Buy Signal'], self.history['Sell Signal'] = self.__get_signals(self.history)
 
+        plt.plot(self.history['MACD Line'], label='MACD')
+        plt.plot(self.history['Signal Line'], label='Signal')
+        plt.plot(self.history['Histogram'], label='Histogram')
+        plt.legend()
+        st.pyplot()
+
         self.__plot()
+
+
 
     def __plot(self):
         plt.figure(figsize=(16, 8))
@@ -276,9 +285,8 @@ class MACD:
         plt.title('MACD INDICATOR')
         plt.xlabel('DATE')
         plt.ylabel('Indicator')
-        plt.xticks(rotation=45)
+        #plt.xticks(rotation=45)
         plt.legend()
-        plt.show()
         st.pyplot()
 
 
@@ -458,12 +466,6 @@ class DeepLearn:
         return self.predict
 
 
-
-
-
-
-
-
 lang_name = st.radio('Languages', list(lang_names.languages.values()))
 
 st.write(f'''
@@ -547,4 +549,3 @@ if float(history['Close'].tolist()[-1]) < float(predict):
 else:
     st.error(predict)
     st.success(f'Yesterday: {history["Close"].tolist()[-1]}')
-#st.info(history['Close'].tolist()[-1])

@@ -1,4 +1,5 @@
 SYMBOLS = [
+    'LTC-USD',
     'BTC-USD',
     'XRP-USD',
     'BCH-USD',
@@ -11,6 +12,5 @@ SYMBOLS = [
     'XLM-USD',
     'BNB-USD',
     'TRX-USD',
-    'LTC-USD',
     'ETH-USD'
 ]
