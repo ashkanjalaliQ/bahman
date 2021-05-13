@@ -1,11 +1,10 @@
-import os
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from sklearn.model_selection import train_test_split
 import streamlit as st
-from PIL import Image
 import yfinance as yf
 from pytse.download import Stock_Data
 from pytse.symbols_data import SYMBOLS as IRStock
@@ -69,7 +68,6 @@ class SVM_Prediction:
     def __train_test_split(self, close_price, predict_price, test_size=0.2):
         return train_test_split(close_price, predict_price, test_size=test_size)
     def get_accuracy(self, test_size = 0.2):
-        #self.xtrain, self.xtest, self.ytrain, self.ytest = train_test_split(self.close_price, self.predict_price, test_size=test_size)
         self.xtrain, self.xtest, self.ytrain, self.ytest = self.__train_test_split(close_price, predict_price)
         self.svr = SVR(kernel='rbf', C=1000, gamma=0.1)
         self.svr.fit(self.xtrain, self.ytrain)
@@ -131,6 +129,8 @@ class TrendLine:
         reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
 
         self.history['low_trend'] = reg[0] * self.history['date_id'] + reg[1]
+
+        #return self.history
 
         self.__plot(self.history)
 
@@ -545,7 +545,101 @@ st.header(f'{translates.translate[lang_name]["Deep_Learning_Prediction"]}: ')
 #st.success(predict)
 if float(history['Close'].tolist()[-1]) < float(predict):
     st.success(predict)
-    st.success(f'Yesterday: {history["Close"].tolist()[-1]}')
 else:
     st.error(predict)
-    st.success(f'Yesterday: {history["Close"].tolist()[-1]}')
+st.success(f'Today: {history["Close"].tolist()[-1]}')
+st.success(macd.history['Signal Line'])
+'''
+from finance import Finance
+from gui import GUI
+import streamlit as st
+from indicators import TrendLine
+from indicators import SMA
+from indicators import MACD
+from indicators import RSI
+from predictions import LR_Prediction
+from predictions import SVM_Prediction
+from predictions import DeepLearn
+from predictions import Prediction
+
+
+class Core(Finance):
+    def __init__(self):
+        self.Export_data = {
+            'Current_price': None,
+            'Close_Price': None,
+            'Indicators': {
+                'MACD': {
+                    'MACD': {
+                        'MACD': None,
+                        'Signal': None
+                    },
+                    'Signals': {
+                        'Buy': None,
+                        'Sell': None
+                    },
+                    'Histo': None
+                },
+                'RSI': None,
+                'TrendLine': None,
+                'SMA': {
+                    'SMA': None,
+                    'Signals': {
+                        'Buy': None,
+                        'Sell': None
+                    }
+                }
+            },
+            'Predictions': {
+                'LR': {
+                    'Prediction': None,
+                    'Accuracy': None
+                },
+                'SVM': {
+                    'Prediction': None,
+                    'Accuracy': None
+                },
+                'DeepLearning': {
+                    'next_day': None,
+                    'train_test': None
+                }
+            }
+        }
+
+    def Get_Inputs(self):
+        self.GUI = GUI()
+        self.symbol, self.prediction_days, self.year, self.period, self.date_range = self.GUI.Get_basic_information()
+        self.history = self.get_history(date_range=self.date_range, period=self.period, symbol=self.symbol)
+        #self.history = self.finance(self.date_range, self.period)
+
+        #self.Indicators()
+
+    def Indicators(self):
+        self.Export_data['Indicators']['TrendLine'] = TrendLine(self.history).Get()
+        self.Export_data['Indicators']['MACD']['MACD']['MACD'], self.Export_data['Indicators']['MACD']['MACD']['Signal'], \
+            self.Export_data['Indicators']['MACD']['Histo'], self.Export_data['Indicators']['MACD']['Signals']['Buy'], \
+                self.Export_data['Indicators']['MACD']['Signals']['Sell']= MACD(self.history).Get()
+        self.Export_data['Indicators']['RSI'] = RSI(self.history).Get()
+        self.Export_data['Indicators']['SMA']['SMA'], self.Export_data['Indicators']['SMA']['Signals']['Buy'], self.Export_data['Indicators']['SMA']['Signals']['Sell'] = SMA(self.history).Get()
+
+        #self.Predictions()
+
+    def Predictions(self):
+        prediction = Prediction(self.prediction_days, self.history)
+        self.close_price, self.predict_price, self.history = prediction.get_close_price()
+        self.svm_prediction = SVM_Prediction(self.close_price, self.predict_price, self.history, self.prediction_days)
+        self.Export_data['Predictions']['SVM']['Accuracy'] = self.svm_prediction.get_accuracy()
+        self.Export_data['Predictions']['SVM']['Prediction'] = self.svm_prediction.get_prediction()
+        self.lr_prediction = LR_Prediction(self.svm_prediction)
+        self.Export_data['Predictions']['LR']['Prediction'] = self.lr_prediction.get_prediction()
+        self.Export_data['Predictions']['LR']['Accuracy'] = self.lr_prediction.get_accuracy()
+
+        #return self.Export_data
+    def Get_Export(self):
+        return self.Export_data
+
+core = Core()
+core.Get_Inputs()
+core.Indicators()
+core.Predictions()
+print(core.Export_data())'''

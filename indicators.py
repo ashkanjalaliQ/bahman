@@ -1,75 +1,64 @@
-import os
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from sklearn.svm import SVR
-from sklearn.model_selection import train_test_split
-import streamlit as st
-from PIL import Image
-import yfinance as yf
-from pytse.download import Stock_Data
-from pytse.symbols_data import SYMBOLS as IRStock
-import matplotlib.pyplot as plt
-import Translations.language_names as lang_names
-import Translations.translations as translates
-import data.symbols_data as USStock
 from scipy.stats import linregress
-import math
-from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import Dense, LSTM
 
 
 class TrendLine:
     def __init__(self, history):
         self.history = history
+        self.days_of_month = 30
+        self.date = 1
 
-    def __get_data(self):
-        date = st.selectbox(f'{translates.translate[lang_name]["Month"]}/{translates.translate[lang_name]["Months"]}: ', [i for i in range(1, 13)])
-        days_of_month = 30
+        #return self.Get()
 
-        return date, days_of_month
-    def Draw(self):
-        date, days_of_month = self.__get_data()
-        self.history = self.history.tail(int(date) * days_of_month)
-        data0 = self.history.copy()
-        data0['date_id'] = ((data0.index.date - data0.index.date.min())).astype('timedelta64[D]')
-        data0['date_id'] = data0['date_id'].dt.days + 1
-        data1 = data0.copy()
+    #def __get_data(self):
+        #date = st.selectbox(f'{translates.translate[lang_name]["Month"]}/{translates.translate[lang_name]["Months"]}: ', [i for i in range(1, 13)])
+        #return date
+    def Get(self):
+        #date = self.__get_data()
+        self.history = self.history.tail(int(self.date) * self.days_of_month)
+        self.history = self.history.copy()
+        self.history['date_id'] = ((self.history.index.date - self.history.index.date.min())).astype('timedelta64[D]')
+        self.history['date_id'] = self.history['date_id'].dt.days + 1
+        history_copy = self.history.copy()
 
-        while len(data1) > 3:
-            reg = linregress(x=data1['date_id'], y=data1['High'])
-            data1 = data1.loc[data1['High'] > reg[0] * data1['date_id'] + reg[1]]
+        while len(history_copy) > 3:
+            reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
+            history_copy = history_copy.loc[history_copy['Close'] > reg[0] * history_copy['date_id'] + reg[1]]
 
-        reg = linregress(x=data1['date_id'], y=data1['High'])
+        reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
 
-        data0['high_trend'] = reg[0] * data0['date_id'] + reg[1]
+        self.history['high_trend'] = reg[0] * self.history['date_id'] + reg[1]
 
-        data1 = data0.copy()
+        history_copy = self.history.copy()
 
-        while len(data1) > 3:
-            reg = linregress(x=data1['date_id'],y=data1['Low'],)
-            data1 = data1.loc[data1['Low'] < reg[0] * data1['date_id'] + reg[1]]
+        while len(history_copy) > 3:
+            reg = linregress(x=history_copy['date_id'],y=history_copy['Close'],)
+            history_copy = history_copy.loc[history_copy['Close'] < reg[0] * history_copy['date_id'] + reg[1]]
 
-        reg = linregress(x=data1['date_id'], y=data1['Low'],)
+        reg = linregress(x=history_copy['date_id'], y=history_copy['Close'])
 
-        data0['low_trend'] = reg[0] * data0['date_id'] + reg[1]
+        self.history['low_trend'] = reg[0] * self.history['date_id'] + reg[1]
 
-        self.__plot(data0)
+        #self.__plot(self.history)
+        return self.history
 
-    def __plot(self, data):
+    '''def __plot(self, data):
         plt.figure(figsize=(16, 8))
         data['Close'].plot()
         data['high_trend'].plot()
+        st.write(data['high_trend'])
         data['low_trend'].plot()
-        plt.show()
-        st.pyplot()
+        st.write(data['low_trend'])
+        st.pyplot()'''
+
 
 
 class SMA:
-    def __init__(self, history, symbol):
+    def __init__(self, history):
         self.history = history
-        self.symbol = symbol
+
+        #return self.Get()
 
     def __get_signals(self, data, moving_average):
         signals = {
@@ -80,7 +69,7 @@ class SMA:
         for i in range(len(data)):
             if moving_average['30']['MA'][i] > moving_average['100']['MA'][i]:
                 if f != 1:
-                    signals['Buy'].append(data[self.symbol][i])
+                    signals['Buy'].append(data['symbol'][i])
                     signals['Sell'].append(np.nan)
                     f = 1
                 else:
@@ -89,7 +78,7 @@ class SMA:
             elif moving_average['30']['MA'][i] < moving_average['100']['MA'][i]:
                 if f != 0:
                     signals['Buy'].append(np.nan)
-                    signals['Sell'].append(data[self.symbol][i])
+                    signals['Sell'].append(data['symbol'][i])
                     f = 0
                 else:
                     signals['Buy'].append(np.nan)
@@ -100,7 +89,7 @@ class SMA:
 
         return signals['Buy'], signals['Sell']
 
-    def calculate_moving_average(self, history):
+    def __calculate_moving_average(self, history):
         moving_average = {
             '30': pd.DataFrame(),
             '100': pd.DataFrame()
@@ -110,16 +99,16 @@ class SMA:
 
         return moving_average
 
-    def get_data(self):
-        self.moving_average = self.calculate_moving_average(self.history)
+    def Get(self):
+        self.moving_average = self.__calculate_moving_average(self.history)
 
         self.data = pd.DataFrame()
-        self.data[self.symbol] = self.history['Close']
+        self.data['symbol'] = self.history['Close']
         self.data['buy signal'], self.data['sell signal'] = self.__get_signals(self.data, self.moving_average)
 
-        self.__plot()
+        return self.data['symbol'], self.data['buy signal'], self.data['sell signal']
 
-    def __plot(self):
+    '''def __plot(self):
         plt.figure(figsize=(16, 8))
         plt.plot(self.data[self.symbol], label=self.symbol, alpha=0.3)
         plt.plot(self.moving_average['30']['MA'], label='MA30', alpha=0.3)
@@ -131,7 +120,7 @@ class SMA:
         plt.ylabel('Price (USD)')
         plt.legend()
         plt.show()
-        st.pyplot()
+        st.pyplot()'''
 
 
 
@@ -140,6 +129,8 @@ class SMA:
 class MACD:
     def __init__(self, history):
         self.history = history
+
+        #return self.Get()
 
     def __get_signals(self, history):
         signals = {
@@ -169,13 +160,13 @@ class MACD:
 
         return signals['Buy'], signals['Sell']
 
-    def histogram(self):
+    def histogram(self, history):
         difference_line = []
-        for i in range(len(self.history)):
-            difference_line.append(self.history['MACD Line'][i] - self.history['Signal Line'][i])
+        for i in range(len(history)):
+            difference_line.append(history['MACD Line'][i] - history['Signal Line'][i])
         return difference_line
 
-    def calculate_macd(self, history, days=365):
+    def __calculate_macd(self, history, days=365):
         history = history.tail(days)
         shortEMA = history.Close.ewm(span=12, adjust=False).mean()
         longEMA = history.Close.ewm(span=26, adjust=False).mean()
@@ -184,27 +175,27 @@ class MACD:
 
         return MACD, Signal, history
 
-    def Draw(self):
-        MACD, Signal, self.history = self.calculate_macd(self.history)
-
-
+    def Get(self):
+        MACD, Signal, self.history = self.__calculate_macd(self.history)
 
         self.history['MACD Line'], self.history['Signal Line'] = MACD, Signal
-        self.history['Histogram'] = self.histogram()
+        self.history['Histogram'] = self.histogram(self.history)
         self.history['Buy Signal'], self.history['Sell Signal'] = self.__get_signals(self.history)
 
-        plt.plot(self.history['MACD Line'], label='MACD')
+        return self.history['MACD Line'], self.history['Signal Line'], self.history['Histogram'], self.history['Buy Signal'], self.history['Sell Signal']
+
+        '''plt.plot(self.history['MACD Line'], label='MACD')
         plt.plot(self.history['Signal Line'], label='Signal')
         plt.plot(self.history['Histogram'], label='Histogram')
         plt.legend()
         plt.show()
         st.pyplot()
 
-        self.__plot()
+        self.__plot()'''
 
 
 
-    def __plot(self):
+    '''def __plot(self):
         plt.figure(figsize=(16, 8))
         plt.scatter(self.history.index, self.history['Buy Signal'], color='green', label='BUY', marker='^')
         plt.scatter(self.history.index, self.history['Sell Signal'], color='red', label='SELL', marker='v')
@@ -215,14 +206,16 @@ class MACD:
         #plt.xticks(rotation=45)
         plt.legend()
         plt.show()
-        st.pyplot()
+        st.pyplot()'''
 
 
 class RSI:
     def __init__(self, history):
         self.history = history
 
-    def calculate_rsi(self, history, days=100, period=14):
+        #return self.Get()
+
+    def __calculate_rsi(self, history, days=100, period=14):
         history = history.tail(days)
         history = history['Close'].diff(1)
         history.dropna()
@@ -235,58 +228,17 @@ class RSI:
         RSI = 100.0 - (100.0 / (1.0 + avg_gain / avg_loss))
         return RSI
 
-    def Draw(self):
-        self.history['RSI'] = self.calculate_rsi(self.history)
-        self.__plot()
+    def Get(self):
+        return self.__calculate_rsi(self.history)
 
-    def __plot(self):
+        #self.__plot()
+
+    '''def __plot(self):
         plt.plot(self.history['RSI'], label='RSI')
         plt.axhline(30, linestyle='--', color='red', alpha=0.5)
         plt.axhline(70, linestyle='--', color='red', alpha=0.5)
         plt.show()
-        st.pyplot()
-
-
-class Plot:
-    def __init__(self):
-        pass
-
-    def ploting(self, data, scatter=None, title=None, xlabel=None, ylabel=None, figsize=(16, 8), figure=True, axhline=None):
-        '''
-        type data: list
-        type scatter: dict
-        type title: str
-        type xlabel: str
-        type ylabel: str
-
-        data:
-        [
-            {
-                list:[...],
-                label: '...',
-                alpha: ...
-            }
-        ]
-
-        scatter:
-        [
-            {
-                index: [...],
-                list: [...],
-                color: '...',
-                label: '...',
-                marker: '...'
-            }
-        ]
-        '''
-        if figure:
-            plt.figure(figsize=figsize)
-
-        for i in range(len(data)):
-            plt.plot(data[i]['list'], label=data[i]['label'], alpha=data[i]['alpha'])
-
-        if scatter != None:
-            pass
+        st.pyplot()'''
 
 
 

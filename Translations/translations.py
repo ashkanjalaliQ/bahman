@@ -1,6 +1,7 @@
 translate = {
     'English': {
-        'main_title': 'Stock market software(SMS)',
+        'main_title': 'Sahm',
+        'sub_title': 'Intelligent financial system',
         'Insert_Data': 'Insert Data',
         'Symbol': 'Symbol',
         'Prediction_days': 'Prediction days',
@@ -25,7 +26,8 @@ translate = {
         'Deep_Learning_Prediction': 'Deep Learning Prediction'
     },
     'Persian': {
-        'main_title': 'نرم افزار بازار بورس(ناب)',
+        'main_title': 'سهم',
+        'sub_title': 'سامانه هوشمند مالی',
         'Insert_Data': 'اضافه کردن اطلاعات',
         'Symbol': 'نماد',
         'Prediction_days': 'روز های پیشبینی',
